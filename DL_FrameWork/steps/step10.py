@@ -1,4 +1,3 @@
-
 class Variable:
     def __init__(self, data):
         if data is not None:
@@ -80,10 +79,41 @@ def numerical_diff(f, x, eps=1e-4):
     y1 = f(x1)
     return (y1.data - y0.data) / (2 * eps)
 
-x = np.array(1.0)
-y = x ** 2
-print(type(x), x.ndim)
-print(type(y))
+
+import unittest
+
+class SquareTest(unittest.TestCase):
+    def test_forward(self):
+        x = Variable(np.array(2.0))
+        y = square(x)
+        expected = np.array(4.0)
+        self.assertEqual(y.data, expected)
+
+    def test_backward(self):
+        x = Varicble(np.array(3.0))
+        y = square(x)
+        y.backward()
+        expected = np.array(6.0)
+        self.assertEqual(x.grad, expected)
+
+    def test_gradient_check(self):
+        x = Variable(np.random.rand(1))
+        y = square(x)
+        y.backward()
+        num_grad = numerical_diff(square, x)
+        flg = np.allclose(x.grad, num_grad)
+        self.assertTrue(flg)
+
+
+
+
+
+unittest.main()
+
+# x = np.array(1.0)
+# y = x ** 2
+# print(type(x), x.ndim)
+# print(type(y))
 
 # A = Square()
 # B = Exp()
