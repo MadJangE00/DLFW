@@ -22,11 +22,16 @@ class Variable:
         funcs = [self.creator]
         while funcs:
             f = funcs.pop()
-            x, y = f.input, f.output
-            x.grad = f.backward(y.grad)
+            gys = [output.grad for output in f.outputs]
+            gxs = f.backward(*gys)
+            if not isinstance(gxs, tuple):
+                gxs = (gxs, )
 
-            if x.creator is not None:
-                funcs.append(x.creator)
+            for x, gx in zip(f.inputs, gxs):
+                x.grad = gx
+
+                if x.creator is not None:
+                    funcs.append(x.creator)
 
 
 def as_array(x):
@@ -59,7 +64,9 @@ class Function:
 class Add(Function):
     def forward(self, x0, x1):
         y = x0 + x1
-        return(y,)
+        return y
+    def backward(self, gy):
+        return gy, gy
 
 class Square(Function):
     def forward(self, x):
@@ -67,7 +74,7 @@ class Square(Function):
         return y
 
     def backward(self, gy):
-        x = self.input.data
+        x = self.inputs[0].data
         gx = 2 * x * gy
         return gx
 
@@ -108,7 +115,12 @@ class SquareTest(unittest.TestCase):
         flg = np.allclose(x.grad, num_grad)
         self.assertTrue(flg)
 
-x0 = Variable(np.array(2))
-x1 = Variable(np.array(3))
-y = add(x0, x1)
+
+x = Variable(np.array(2.0))
+y = Variable(np.array(3.0))
+
+z = add(square(x), square(y))
+z.backward()
+print(z.data)
 print(y.data)
+print(x.data)
